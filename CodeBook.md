@@ -29,7 +29,8 @@ This file is a description of the "run_analysis.R" code processes and all variab
       * Written to a .txt and .csv file for replication and easy of importing later
 
 ## Variables
-###Participants and Activity Information
+
+### Participants and Activity Information
 
 **ParticipantNum**
 
