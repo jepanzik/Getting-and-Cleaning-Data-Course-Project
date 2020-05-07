@@ -22,7 +22,10 @@
 #7) Merge the training and test data frames
       #Reorder merged data frame by participant number then activity
       #Replace activity numbers with character description
-
+#8) Determine mean value for each variable based on participant number AND activity
+#9) Write the tidy data that has 1 mean value of the desired features for each activity for each person (30 participants x 6 activities/per participant)
+      #Written to "tidydata" directory (created if not present)
+      #Written to a .txt and .csv file for replication and easy of importing later
 
 
 
@@ -147,4 +150,7 @@ averagedData <- merged %>%
 if(!file.exists("./tidydata")){dir.create("./tidydata")}
 
 #Write "averagedData" data table to "tidyData.txt"
-data.table::fwrite(x = averaged, file = "tidyData.txt", quote = FALSE)
+write.table(averagedData, "./tidydata/tidyData.txt", sep = " ", dec = ".", row.names = FALSE, col.names = TRUE)
+
+#Write "averagedData" data table to "tidyData.csv" (Just as another format that might be easier to import to other platforms)
+write.csv(averagedData, "./tidydata/tidyData.csv",row.names = FALSE,)
