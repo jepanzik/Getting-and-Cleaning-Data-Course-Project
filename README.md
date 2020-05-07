@@ -1,8 +1,7 @@
 ---
-title: "README"
-author: "J.E. Panzik"
-date: "5/7/2020"
-output: html_document
+Title: "README"
+Author: "J.E. Panzik"
+Date: "5/7/2020"
 ---
 
 
@@ -31,7 +30,9 @@ Good luck!
 
 
 ## Data Description
-Taken from <http://archive.ics.uci.edu/ml/datasets/Human+Activity+Recognition+Using+Smartphones>
+README files for raw data files are contained within the "UCI HAR Dataset" directory
+
+Following description taken from <http://archive.ics.uci.edu/ml/datasets/Human+Activity+Recognition+Using+Smartphones>
 
 
 ### Source:

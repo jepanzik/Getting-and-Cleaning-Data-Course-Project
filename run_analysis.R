@@ -12,7 +12,7 @@
       #Neaten appearance of the label names
 #3) Load list of features from "features.txt"
 #4) Search for and keep features that have "mean()" or "std()" as desired quantities.
-      #Neaten appearand of desired feature variable names
+      #Neaten appearance of desired feature variable names
 #5) Load the training data "X_train.txt" and filter for desired features.
       #Add column names
       #Append the corresponding Participant number and activity number for each row of observations
@@ -84,6 +84,17 @@ finalFeatures <-gsub("-","", finalFeatures)
 #Neatens labels by changing repetitive "BodyBody" to "Body" in feature names
 finalFeatures <-sub("BodyBody","Body", finalFeatures)
 
+#Adds "Mag" to the end of strings that have "Mag" in them
+finalFeatures[grep("Mag", finalFeatures,)] <- paste0(finalFeatures[grep("Mag", finalFeatures,)],"Mag")
+
+#Removes the first "Mag" in the strings. This process has moved "Mag" from the middle to the end of the string.
+finalFeatures <-sub("Mag","", finalFeatures)
+
+#Adds "Jerk" to the end of strings that have "Jerk" in them
+finalFeatures[grep("Jerk", finalFeatures,)] <- paste0(finalFeatures[grep("Jerk", finalFeatures,)],"Jerk")
+
+#Removes the first "Jerk" in the strings. This process has moved "Jerk" from the middle to the end of the string.
+finalFeatures <-sub("Jerk","", finalFeatures)
 
 
 ##Load train data sets
@@ -140,11 +151,11 @@ merged <- merged[order(ParticipantNum, Activity),]
 #Convert the number codes in "Activity" to the character descriptions from "activityLabels$ActivityName"
 merged$Activity <- factor(merged$Activity,levels=activityLabels$ActivityKey,labels=activityLabels$ActivityName)
 
-#Calculates the average of each variable for each activity performed by each participant.
+#Calculates the average of each variable for each activity performed by each participant. Removes NA values
 #Output has 1 average measurement for each activity of each participant
 averagedData <- merged %>%
     group_by(ParticipantNum, Activity) %>% 
-    summarise_each(mean)
+    summarise_all(mean, na.rm=TRUE)
 
 #Checks to see if "tidydata" directory exists. Creates directory if not.
 if(!file.exists("./tidydata")){dir.create("./tidydata")}
@@ -154,3 +165,4 @@ write.table(averagedData, "./tidydata/tidyData.txt", sep = " ", dec = ".", row.n
 
 #Write "averagedData" data table to "tidyData.csv" (Just as another format that might be easier to import to other platforms)
 write.csv(averagedData, "./tidydata/tidyData.csv",row.names = FALSE,)
+
