@@ -1,0 +1,150 @@
+# Getting and Cleaning Data Course Project
+#Johns Hopkins University Coursera
+# Author: Joe Panzik
+# Date Created: May 6, 2020
+
+###BEFORE YOU RUN###
+#Make sure unzipped Samsung data folder "UCI HAR Dataset" is in your working directory
+
+##Project flow
+#1) Check for "data.table" package and install if missing. Call "data.table" from library
+#2) Load the key for the activity labels from "activity_labels.txt"
+      #Neaten appearance of the label names
+#3) Load list of features from "features.txt"
+#4) Search for and keep features that have "mean()" or "std()" as desired quantities.
+      #Neaten appearand of desired feature variable names
+#5) Load the training data "X_train.txt" and filter for desired features.
+      #Add column names
+      #Append the corresponding Participant number and activity number for each row of observations
+#6) Load the test data "X_test.txt" and filter for desired features.
+      #Add column names
+      #Append the corresponding Participant number and activity number for each row of observations
+#7) Merge the training and test data frames
+      #Reorder merged data frame by participant number then activity
+      #Replace activity numbers with character description
+
+
+
+
+#Check to see if you have the data.table package. Install if not present.
+if("data.table" %in% rownames(installed.packages()) == FALSE) {install.packages("data.table")}
+
+#Check to see if you have the dplyr package. Install if not present.
+if("dplyr" %in% rownames(installed.packages()) == FALSE) {install.packages("dplyr")}
+
+#Call data.table and dplyr from library
+library(data.table); library(dplyr)
+
+
+##Load activity labels
+#Load activity labels from "activity_labels.txt" with column names "classLabels" & "activityName"
+activityLabels <- fread("UCI HAR Dataset/activity_labels.txt", col.names = c("ActivityKey", "ActivityName"))
+
+#Neaten "activityName" strings to be all lowercase
+activityLabels$ActivityName <- tolower(activityLabels$ActivityName)
+
+#Neaten to remove "_" from string
+activityLabels$ActivityName <- sub("_","", activityLabels$ActivityName)
+
+
+
+#Load Features & select desired features
+#Load features from "features.txt" with column names "index" & "featureNames"
+features <- fread("UCI HAR Dataset/features.txt", col.names = c("index", "featureNames"))
+
+#Look through "featuresNames" for values that are the "mean()" or std()" measurements based on descriptions in "features_info.txt"
+#Returns the indices for those occurences and stores them in "featuresDesired"
+featuresDesired <- grep("(mean|std)\\(\\)", features[, featureNames])
+
+#Takes the indices of where the "mean()" and "std()" values are and only takes those rows in "features"
+#finalFeatures only has one column: "featureName" values that correspond to the indices stored in "featuresDesired"
+finalFeatures <- features[featuresDesired, featureNames]
+
+#Removes "()" in each element of "finalFeatures"
+finalFeatures <- gsub('[()]', '', finalFeatures)
+
+#Neatens labels by changing feature names that start with "t' to "Time"
+finalFeatures <-sub("^t","Time", finalFeatures)
+
+#Neatens labels by changing feature names that start with "f' to "Fft"
+finalFeatures <-sub("^f","Fft", finalFeatures)
+
+#Neatens labels by changing feature names with "-mean" to "Mean"
+finalFeatures <-sub("-mean","Mean", finalFeatures)
+
+#Neatens labels by changing feature names with "-std" to "Std"
+finalFeatures <-sub("-std","Std", finalFeatures)
+
+#Neatens labels by removing "-" from feature names
+finalFeatures <-gsub("-","", finalFeatures)
+
+#Neatens labels by changing repetitive "BodyBody" to "Body" in feature names
+finalFeatures <-sub("BodyBody","Body", finalFeatures)
+
+
+
+##Load train data sets
+#Load train data to "train"
+train <- fread("UCI HAR Dataset/train/X_train.txt")
+
+#Each variable (column) in "train" represents one of the 561 features in "features.txt"
+#Only take columns of features we want to look at (indices in "featuresDesired")
+train <- subset(train,select=featuresDesired)
+
+#Change the names of the columns in "train" to what features they represent using "finalFeatures"
+colnames(train) <- finalFeatures
+
+#Read in the information about what type of activity each row represents (WALKING, SITTING, etc.; related to "activityLabels")
+trainActivities <- fread("UCI HAR Dataset/train/Y_train.txt", col.names = c("Activity"))
+
+#Read in the information about the participant ID each row represents
+trainParticipants <- fread("UCI HAR Dataset/train/subject_train.txt", col.names = c("ParticipantNum"))
+
+#Combine the activity and participant ID information to the beginning of "train" data frames as columns with new variables
+train <- cbind(trainParticipants, trainActivities, train)
+
+
+
+##Load test data sets
+#Load test data to "test"
+test <- fread("UCI HAR Dataset/test/X_test.txt")
+
+#Each variable (column) in "test" represents one of the 561 features in "features.txt"
+#Only take columns of features we want to look at (indices in "featuresDesired")
+test <- subset(test,select=featuresDesired)
+
+#Change the names of the columns in "test" to what features they represent using "finalFeatures"
+colnames(test) <- finalFeatures
+
+#Read in the information about what type of activity each row represents (WALKING, SITTING, etc.; related to "activityLabels")
+testActivities <- fread("UCI HAR Dataset/test/Y_test.txt", col.names = c("Activity"))
+
+#Read in the information about the participant ID each row represents
+testParticipants <- fread("UCI HAR Dataset/test/subject_test.txt", col.names = c("ParticipantNum"))
+
+#Combine the activity and participant ID information to the beginning of "test" data frames as columns with new variables
+test <- cbind(testParticipants, testActivities, test)
+
+
+
+##Merge and Neaten train and test data sets
+#Merge train and test data sets
+merged <- rbind(train,test)
+
+#Reorder rows by "ParticipantNum" and "Activity"
+merged <- merged[order(ParticipantNum, Activity),]
+
+#Convert the number codes in "Activity" to the character descriptions from "activityLabels$ActivityName"
+merged$Activity <- factor(merged$Activity,levels=activityLabels$ActivityKey,labels=activityLabels$ActivityName)
+
+#Calculates the average of each variable for each activity performed by each participant.
+#Output has 1 average measurement for each activity of each participant
+averagedData <- merged %>%
+    group_by(ParticipantNum, Activity) %>% 
+    summarise_each(mean)
+
+#Checks to see if "tidydata" directory exists. Creates directory if not.
+if(!file.exists("./tidydata")){dir.create("./tidydata")}
+
+#Write "averagedData" data table to "tidyData.txt"
+data.table::fwrite(x = averaged, file = "tidyData.txt", quote = FALSE)
